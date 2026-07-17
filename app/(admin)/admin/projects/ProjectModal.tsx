@@ -14,9 +14,9 @@ interface Project {
   description: string;
   startYear: number;
   endYear?: number | null;
-  thumbnail?: string;
-  github?: string;
-  demo?: string;
+  thumbnail?: string | null;
+  github?: string | null;
+  demo?: string | null;
   featured: boolean;
   technologies: Technology[];
 }

@@ -10,7 +10,7 @@ interface Experience {
   startDate: string;
   endDate?: string | null;
   description: string;
-  logo?: string;
+  logo?: string | null;
 }
 
 const EMPTY: Experience = {
