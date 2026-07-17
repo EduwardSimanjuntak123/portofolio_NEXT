@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model About {
+  id          String   @id @default(cuid())
+  fullName    String
+  title       String
+  description String   @db.Text
+
+  photo       String?
+  resume      String?
+
+  email       String
+  phone       String?
+  location    String?
+
+  github      String?
+  linkedin    String?
+  instagram   String?
+  website     String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Skill {
+  id         String   @id @default(cuid())
+  name       String
+  icon       String?
+  category   String
+  percentage Int
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+
+  title       String
+  slug        String   @unique
+
+  description String   @db.Text
+
+  startYear   Int
+  endYear     Int?
+
+  thumbnail   String?
+
+  github      String?
+  demo        String?
+
+  featured    Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  technologies ProjectTechnology[]
+}
+
+model ProjectTechnology {
+  id        String   @id @default(cuid())
+
+  projectId String
+
+  name      String
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Experience {
+  id          String   @id @default(cuid())
+
+  company     String
+  position    String
+  location    String?
+
+  startDate   DateTime
+  endDate     DateTime?
+
+  description String   @db.Text
+
+  logo        String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+
+  title       String
+  issuer      String
+
+  issueDate   DateTime
+
+  credential  String?
+
+  image       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Blog {
+  id          String   @id @default(cuid())
+
+  title       String
+  slug        String   @unique
+
+  cover       String?
+
+  content     String   @db.Text
+
+  published   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContactMessage {
+  id          String   @id @default(cuid())
+
+  name        String
+  email       String
+  subject     String
+
+  message     String   @db.Text
+
+  isRead      Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+}
+
+model Setting {
+  id            String   @id @default(cuid())
+
+  websiteTitle  String
+  description   String   @db.Text
+
+  logo          String?
+  favicon       String?
+
+  cv            String?
+
+  primaryColor  String? @default("#2563eb")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
