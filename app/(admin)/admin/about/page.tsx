@@ -161,7 +161,7 @@ function InputField({ label, value, placeholder, type = "text", icon, onChange }
         </span>
         <input
           type={type}
-          value={value}
+          value={value ?? ""}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-lg border border-stone-200 bg-stone-50/60 py-2.5 pl-10 pr-3.5 text-[14.5px] text-stone-800
@@ -246,11 +246,11 @@ export default function AboutAdmin() {
   const initials =
     form.fullName.trim().length > 0
       ? form.fullName
-          .trim()
-          .split(/\s+/)
-          .slice(0, 2)
-          .map((w) => w[0]?.toUpperCase())
-          .join("")
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase())
+        .join("")
       : "—";
 
   const socials = [
@@ -258,7 +258,7 @@ export default function AboutAdmin() {
     { key: "linkedin", icon: "linkedin" as IconName, value: form.linkedin },
     { key: "instagram", icon: "instagram" as IconName, value: form.instagram },
     { key: "website", icon: "globe" as IconName, value: form.website },
-  ].filter((s) => s.value.trim().length > 0);
+  ].filter((s) => (s.value ?? "").trim().length > 0);
 
   return (
     <div className="min-h-screen bg-[#F6F4EF]">
