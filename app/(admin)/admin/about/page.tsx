@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface AboutForm {
   id?: string;
@@ -195,6 +196,356 @@ function Section({
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* PhotoUploadField                                                      */
+/* ------------------------------------------------------------------ */
+
+const BUCKET = "skill-icons";
+
+type UploadStatus = "idle" | "uploading" | "success" | "error";
+
+function PhotoUploadField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [status, setStatus] = useState<UploadStatus>("idle");
+  const [progress, setProgress] = useState(0);
+  const [errMsg, setErrMsg] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function upload(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setErrMsg("Hanya file gambar yang diizinkan.");
+      setStatus("error");
+      return;
+    }
+    setStatus("uploading");
+    setProgress(10);
+    setErrMsg("");
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `photos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      setProgress(40);
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
+      if (error) throw error;
+      setProgress(85);
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      onChange(data.publicUrl);
+      setProgress(100);
+      setStatus("success");
+    } catch (err: unknown) {
+      setErrMsg(err instanceof Error ? err.message : "Upload gagal.");
+      setStatus("error");
+      setProgress(0);
+    }
+  }
+
+  function handleFiles(files: FileList | null) {
+    if (files?.[0]) upload(files[0]);
+  }
+
+  function handleClear() {
+    onChange("");
+    setStatus("idle");
+    setProgress(0);
+    setErrMsg("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  return (
+    <div>
+      <label className="mono-label mb-1.5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.12em] text-stone-500">
+        Foto Profil
+      </label>
+
+      <div className="flex gap-4 items-start flex-wrap">
+        {/* Current / preview */}
+        <div className="shrink-0">
+          {value ? (
+            <div className="group relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-stone-200 shadow-sm">
+              <img
+                src={value}
+                alt="Foto profil"
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" className="w-5 h-5">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-stone-300 bg-stone-50 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a8a29e" strokeWidth="1.5" strokeLinecap="round" className="w-8 h-8">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Drop zone + URL input */}
+        <div className="flex-1 min-w-0 space-y-2">
+          {/* Drag-and-drop zone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+            onClick={() => fileRef.current?.click()}
+            className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-5 py-5 text-center transition-all ${
+              dragging
+                ? "border-teal-600 bg-teal-50"
+                : "border-stone-200 bg-stone-50/60 hover:border-teal-400 hover:bg-teal-50/30"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke={dragging ? "#0d9488" : "#a8a29e"} strokeWidth="1.8" strokeLinecap="round" className="w-7 h-7">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p className="text-[13px] font-medium text-stone-600">
+              {dragging ? "Lepas untuk upload" : "Klik atau drag foto ke sini"}
+            </p>
+            <p className="text-[11px] text-stone-400">JPG, PNG, WEBP · Maks 5MB</p>
+          </div>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+
+          {/* Manual URL override */}
+          <div className="relative">
+            <input
+              type="url"
+              value={value ?? ""}
+              onChange={(e) => { onChange(e.target.value); setStatus("idle"); }}
+              placeholder="Atau tempel URL foto langsung..."
+              className="w-full rounded-lg border border-stone-200 bg-stone-50/60 py-2.5 px-3.5 text-[13px] text-stone-700 outline-none transition placeholder:text-stone-400 focus:border-teal-800/40 focus:bg-white focus:ring-4 focus:ring-teal-800/[0.07]"
+            />
+            {value && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 hover:text-red-400 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-3.5 h-3.5">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Status */}
+          {status === "uploading" && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-stone-500 flex items-center gap-1.5">
+                  <svg className="w-3 h-3 animate-spin text-teal-600" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Mengupload foto...
+                </span>
+                <span className="font-semibold text-teal-700">{progress}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-teal-600 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {status === "success" && (
+            <p className="flex items-center gap-1.5 text-[11px] text-teal-700 font-medium">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-3.5 h-3.5"><path d="M20 6L9 17l-5-5" /></svg>
+              Foto berhasil diupload ke Supabase!
+            </p>
+          )}
+          {status === "error" && (
+            <p className="flex items-center gap-1.5 text-[11px] text-red-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+              {errMsg}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* ResumeUploadField                                                     */
+/* ------------------------------------------------------------------ */
+
+function ResumeUploadField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [status, setStatus] = useState<UploadStatus>("idle");
+  const [progress, setProgress] = useState(0);
+  const [errMsg, setErrMsg] = useState("");
+  const [fileName, setFileName] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function upload(file: File) {
+    setStatus("uploading");
+    setProgress(10);
+    setErrMsg("");
+    setFileName(file.name);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `resumes/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      setProgress(45);
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
+      if (error) throw error;
+      setProgress(85);
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      onChange(data.publicUrl);
+      setProgress(100);
+      setStatus("success");
+    } catch (err: unknown) {
+      setErrMsg(err instanceof Error ? err.message : "Upload gagal.");
+      setStatus("error");
+      setProgress(0);
+    }
+  }
+
+  function handleClear() {
+    onChange("");
+    setStatus("idle");
+    setProgress(0);
+    setErrMsg("");
+    setFileName("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  return (
+    <div>
+      <label className="mono-label mb-1.5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.12em] text-stone-500">
+        Resume / CV
+      </label>
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <input
+            type="url"
+            value={value ?? ""}
+            onChange={(e) => { onChange(e.target.value); setStatus("idle"); }}
+            placeholder="https://... atau upload file di bawah"
+            className="w-full rounded-lg border border-stone-200 bg-stone-50/60 py-2.5 px-3.5 text-[13px] text-stone-700 outline-none transition placeholder:text-stone-400 focus:border-teal-800/40 focus:bg-white focus:ring-4 focus:ring-teal-800/[0.07] pr-8"
+          />
+          {value && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 hover:text-red-400 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-3.5 h-3.5">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={status === "uploading"}
+          className="flex items-center gap-1.5 rounded-lg border border-dashed border-stone-300 bg-stone-50 px-4 py-2.5 text-[13px] font-medium text-stone-500 hover:border-teal-500 hover:bg-teal-50 hover:text-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+        >
+          {status === "uploading" ? (
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          )}
+          Upload
+        </button>
+        {value && (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5 text-[13px] font-medium text-stone-500 hover:text-stone-700 transition-colors shrink-0"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            Lihat
+          </a>
+        )}
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".pdf,.doc,.docx"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
+      />
+
+      {/* Status */}
+      {status === "uploading" && (
+        <div className="mt-2 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-stone-500 flex items-center gap-1.5">
+              <svg className="w-3 h-3 animate-spin text-teal-600" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Mengupload <span className="font-medium text-stone-700 truncate max-w-[160px]">{fileName}</span>
+            </span>
+            <span className="font-semibold text-teal-700">{progress}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-teal-600 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {status === "success" && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-teal-700 font-medium">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-3.5 h-3.5"><path d="M20 6L9 17l-5-5" /></svg>
+          <span className="font-medium">{fileName}</span> berhasil diupload!
+        </p>
+      )}
+      {status === "error" && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-red-500">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          {errMsg}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
 export default function AboutAdmin() {
   const [form, setForm] = useState<AboutForm>(initialForm);
   const [loading, setLoading] = useState(true);
@@ -310,9 +661,19 @@ export default function AboutAdmin() {
                       Kartu Identitas
                     </p>
                     <div className="mt-4 flex items-center gap-3.5">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-800/30 text-[15px] font-semibold text-teal-200">
-                        {initials}
-                      </div>
+                      {/* Photo avatar in card */}
+                      {form.photo ? (
+                        <img
+                          src={form.photo}
+                          alt={form.fullName || "Photo"}
+                          className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-teal-400/30"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-800/30 text-[15px] font-semibold text-teal-200">
+                          {initials}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="font-display truncate text-[17px] text-white">
                           {form.fullName || "Nama lengkapmu"}
@@ -407,20 +768,20 @@ export default function AboutAdmin() {
                         onChange={(v) => set("location", v)}
                       />
                     </div>
-                    <InputField
-                      label="Foto URL"
-                      icon="image"
-                      placeholder="https://example.com/photo.jpg"
-                      value={form.photo}
-                      onChange={(v) => set("photo", v)}
-                    />
-                    <InputField
-                      label="Resume URL"
-                      icon="file"
-                      placeholder="https://example.com/resume.pdf"
-                      value={form.resume}
-                      onChange={(v) => set("resume", v)}
-                    />
+                    {/* ─── Photo Upload ─── */}
+                    <div className="sm:col-span-2">
+                      <PhotoUploadField
+                        value={form.photo}
+                        onChange={(url) => set("photo", url)}
+                      />
+                    </div>
+                    {/* ─── Resume Upload ─── */}
+                    <div className="sm:col-span-2">
+                      <ResumeUploadField
+                        value={form.resume}
+                        onChange={(url) => set("resume", url)}
+                      />
+                    </div>
                   </div>
                 </Section>
 
