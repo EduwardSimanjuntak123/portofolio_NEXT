@@ -8,11 +8,12 @@ interface DashboardData {
     projectCount: number;
     skillCount: number;
     experienceCount: number;
+    certificateCount: number;
+    blogCount: number;
     unreadCount: number;
   };
   recent: {
     recentProjects: { id: string; title: string; createdAt: string }[];
-    recentSkills: { id: string; name: string; createdAt: string }[];
     recentExperiences: { id: string; company: string; position: string; createdAt: string }[];
     recentMessages: { id: string; name: string; subject: string; isRead: boolean; createdAt: string }[];
   };
@@ -44,13 +45,13 @@ const statConfig = [
   },
   {
     key: "skillCount" as const,
-    label: "Skills",
-    href: "/admin/skills",
+    label: "Teknologi",
+    href: "/admin/technology",
     gradient: "linear-gradient(135deg, #10b981, #059669)",
     shadow: "rgba(16,185,129,0.35)",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
       </svg>
     ),
   },
@@ -100,12 +101,6 @@ export default function DashboardPage() {
       time: p.createdAt,
       color: "#6366f1",
       href: "/admin/projects",
-    })),
-    ...(data?.recent?.recentSkills ?? []).map((s) => ({
-      label: `Skill baru: "${s.name}"`,
-      time: s.createdAt,
-      color: "#10b981",
-      href: "/admin/skills",
     })),
     ...(data?.recent?.recentExperiences ?? []).map((e) => ({
       label: `Experience: "${e.position}" di ${e.company}`,
@@ -222,7 +217,8 @@ export default function DashboardPage() {
           <div className="space-y-2.5">
             {[
               { label: "Tambah Project Baru", href: "/admin/projects", gradient: "linear-gradient(135deg, #6366f1, #8b5cf6)" },
-              { label: "Tambah Skill", href: "/admin/skills", gradient: "linear-gradient(135deg, #10b981, #059669)" },
+              { label: "Tambah Teknologi", href: "/admin/technology", gradient: "linear-gradient(135deg, #10b981, #059669)" },
+              { label: "Tambah Skill", href: "/admin/skills", gradient: "linear-gradient(135deg, #14b8a6, #0d9488)" },
               { label: "Tambah Experience", href: "/admin/experience", gradient: "linear-gradient(135deg, #f59e0b, #d97706)" },
               { label: "Lihat Pesan Masuk", href: "/admin/contact", gradient: "linear-gradient(135deg, #ef4444, #dc2626)" },
               { label: "Edit Profil", href: "/admin/about", gradient: "linear-gradient(135deg, #0f172a, #1e293b)" },

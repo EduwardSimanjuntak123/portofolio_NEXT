@@ -11,17 +11,14 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
   DevOps: { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" },
   Tools: { bg: "#f8fafc", text: "#475569", border: "#cbd5e1" },
   "Programming Language": { bg: "#fffbeb", text: "#d97706", border: "#fde68a" },
+  Design: { bg: "#fdf2f8", text: "#db2777", border: "#fbcfe8" },
+  Lainnya: { bg: "#f8fafc", text: "#475569", border: "#cbd5e1" },
 };
 
-function getCategoryColor(cat: string) {
-  return categoryColors[cat] ?? { bg: "#f8fafc", text: "#475569", border: "#cbd5e1" };
-}
-
-const categories = ["Semua", "Frontend", "Backend", "Mobile", "Database", "DevOps", "Tools", "Programming Language"];
+const CATEGORIES = ["Semua", "Frontend", "Backend", "Mobile", "Database", "DevOps", "Tools", "Programming Language", "Design", "Lainnya"];
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Semua");
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -45,11 +42,9 @@ export default function SkillsPage() {
 
   useEffect(() => { loadSkills(); }, []);
 
-  const filtered = skills.filter((s) => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = categoryFilter === "Semua" || s.category === categoryFilter;
-    return matchSearch && matchCat;
-  });
+  const filtered = skills.filter((s) =>
+    categoryFilter === "Semua" || s.category === categoryFilter
+  );
 
   async function handleDelete(id: string) {
     try {
@@ -71,7 +66,6 @@ export default function SkillsPage() {
 
   const levelLabel = (p: number) =>
     p >= 90 ? "Expert" : p >= 70 ? "Advanced" : p >= 50 ? "Intermediate" : p >= 30 ? "Beginner" : "Novice";
-
   const levelColor = (p: number) =>
     p >= 70 ? "#10b981" : p >= 50 ? "#f59e0b" : "#ef4444";
 
@@ -83,60 +77,38 @@ export default function SkillsPage() {
           <div>
             <p className="text-xs font-mono uppercase tracking-widest text-emerald-600/70 mb-1">Admin · Portfolio</p>
             <h1 className="text-3xl font-bold text-slate-800">Skills</h1>
-            <p className="text-slate-500 mt-1 text-sm">Kelola teknologi dan keahlian yang kamu kuasai.</p>
+            <p className="text-slate-500 mt-1 text-sm">Kelola kategori keahlian dan teknologi yang dikuasai.</p>
           </div>
           <button
             onClick={() => { setSelectedSkill(null); setOpenModal(true); }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
             style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 15px rgba(16,185,129,0.4)" }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-4 h-4">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-4 h-4"><path d="M12 5v14M5 12h14" /></svg>
             Tambah Skill
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Category filter */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1 max-w-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" />
-              </svg>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari skill..."
-                className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 outline-none focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition"
-              />
-            </div>
-
-            {/* Category filter */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCategoryFilter(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                    categoryFilter === cat
-                      ? "text-white border-transparent"
-                      : "text-slate-500 border-slate-200 hover:border-slate-300"
-                  }`}
-                  style={categoryFilter === cat ? { background: "linear-gradient(135deg, #10b981, #059669)" } : {}}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${categoryFilter === cat ? "text-white border-transparent" : "text-slate-500 border-slate-200 hover:border-slate-300"}`}
+                style={categoryFilter === cat ? { background: "linear-gradient(135deg, #10b981, #059669)" } : {}}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Skills Grid */}
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 animate-pulse">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-slate-100" />
@@ -155,34 +127,35 @@ export default function SkillsPage() {
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
             <p className="text-base font-medium">Tidak ada skill ditemukan</p>
-            <p className="text-sm mt-1">Coba ubah filter atau tambah skill baru.</p>
+            <p className="text-sm mt-1">Klik &quot;Tambah Skill&quot; untuk menambahkan.</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((skill) => {
-              const catColor = getCategoryColor(skill.category);
+              const catColor = categoryColors[skill.category] ?? { bg: "#f8fafc", text: "#475569", border: "#cbd5e1" };
               const color = levelColor(skill.percentage);
+              const techs = skill.technologies || [];
               return (
-                <div
-                  key={skill.id}
-                  className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 p-5"
-                >
+                <div key={skill.id} className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 p-5">
                   {/* Top row */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-                        style={{ background: catColor.bg, border: `1px solid ${catColor.border}` }}>
-                        {skill.icon || "⚡"}
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: catColor.bg, border: `1px solid ${catColor.border}` }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke={catColor.text} strokeWidth="1.8" strokeLinecap="round" className="w-5 h-5">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-800 text-sm truncate">{skill.name}</p>
+                      <div>
+                        <p className="font-semibold text-slate-800 text-sm">{skill.category}</p>
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                           style={{ background: catColor.bg, color: catColor.text, border: `1px solid ${catColor.border}` }}>
-                          {skill.category}
+                          {levelLabel(skill.percentage)}
                         </span>
                       </div>
                     </div>
-                    {/* Actions */}
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => { setSelectedSkill(skill); setOpenModal(true); }}
@@ -204,19 +177,34 @@ export default function SkillsPage() {
                     </div>
                   </div>
 
-                  {/* Progress */}
-                  <div className="mt-3">
+                  {/* Progress bar */}
+                  <div className="mt-1">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-slate-400">{levelLabel(skill.percentage)}</span>
+                      <span className="text-xs text-slate-400">Penguasaan</span>
                       <span className="text-xs font-bold" style={{ color }}>{skill.percentage}%</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${skill.percentage}%`, background: `linear-gradient(to right, ${color}99, ${color})` }}
-                      />
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${skill.percentage}%`, background: `linear-gradient(to right, ${color}99, ${color})` }} />
                     </div>
                   </div>
+
+                  {/* Technologies */}
+                  {techs.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <div className="flex flex-wrap gap-1.5">
+                        {techs.slice(0, 5).map((st) => (
+                          <span key={st.technology.id} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                            {st.technology.logo && <img src={st.technology.logo} alt="" className="w-3 h-3 object-contain" />}
+                            {st.technology.name}
+                          </span>
+                        ))}
+                        {techs.length > 5 && (
+                          <span className="text-xs bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">+{techs.length - 5}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

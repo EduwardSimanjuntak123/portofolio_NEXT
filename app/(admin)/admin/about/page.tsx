@@ -7,6 +7,8 @@ interface AboutForm {
   fullName: string;
   title: string;
   description: string;
+  photo: string;
+  resume: string;
   email: string;
   phone: string;
   location: string;
@@ -20,6 +22,8 @@ const initialForm: AboutForm = {
   fullName: "",
   title: "",
   description: "",
+  photo: "",
+  resume: "",
   email: "",
   phone: "",
   location: "",
@@ -43,7 +47,9 @@ type IconName =
   | "globe"
   | "check"
   | "arrow"
-  | "quill";
+  | "quill"
+  | "image"
+  | "file";
 
 function Icon({ name, className = "w-4 h-4" }: { name: IconName; className?: string }) {
   const paths: Record<IconName, ReactElement> = {
@@ -101,6 +107,19 @@ function Icon({ name, className = "w-4 h-4" }: { name: IconName; className?: str
     arrow: <path d="M5 12h13M13 6l6 6-6 6" />,
     quill: (
       <path d="M19 4.5c-4 0-9.8 2.6-12 8.3-.7 1.9-1.5 5-1.5 6.7 1.7 0 4.8-.8 6.7-1.5 5.7-2.2 8.3-8 8.3-12 0-.6 0-1.1-.1-1.5-.4-.1-.9-.1-1.4 0zM10 14L18 6" />
+    ),
+    image: (
+      <>
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
+      </>
+    ),
+    file: (
+      <>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </>
     ),
   };
 
@@ -388,6 +407,20 @@ export default function AboutAdmin() {
                         onChange={(v) => set("location", v)}
                       />
                     </div>
+                    <InputField
+                      label="Foto URL"
+                      icon="image"
+                      placeholder="https://example.com/photo.jpg"
+                      value={form.photo}
+                      onChange={(v) => set("photo", v)}
+                    />
+                    <InputField
+                      label="Resume URL"
+                      icon="file"
+                      placeholder="https://example.com/resume.pdf"
+                      value={form.resume}
+                      onChange={(v) => set("resume", v)}
+                    />
                   </div>
                 </Section>
 

@@ -1,147 +1,95 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// ===============================
-// GET ALL SKILLS
-// ===============================
+// GET all skills with their technologies
 export async function GET() {
   try {
     const skills = await prisma.skill.findMany({
-      orderBy: {
-        name: "asc",
+      orderBy: { category: "asc" },
+      include: {
+        technologies: {
+          include: {
+            technology: true,
+          },
+        },
       },
     });
-
     return NextResponse.json(skills);
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        message: "Gagal mengambil data skill.",
-      },
-      {
-        status: 500,
-      }
-    );
+    return NextResponse.json({ message: "Gagal mengambil data skill." }, { status: 500 });
   }
 }
 
-// ===============================
-// CREATE SKILL
-// ===============================
+// POST create skill
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const technologyIds: string[] = body.technologyIds || [];
 
     const skill = await prisma.skill.create({
       data: {
-        name: body.name,
         category: body.category,
         percentage: Number(body.percentage),
-        icon: body.icon,
+        technologies: {
+          create: technologyIds.map((technologyId: string) => ({ technologyId })),
+        },
+      },
+      include: {
+        technologies: { include: { technology: true } },
       },
     });
 
-    return NextResponse.json(skill, {
-      status: 201,
-    });
+    return NextResponse.json(skill, { status: 201 });
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        message: "Gagal menambahkan skill.",
-      },
-      {
-        status: 500,
-      }
-    );
+    return NextResponse.json({ message: "Gagal menambahkan skill." }, { status: 500 });
   }
 }
 
-// ===============================
-// UPDATE SKILL
-// ===============================
+// PUT update skill
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
+    const technologyIds: string[] = body.technologyIds || [];
 
     if (!body.id) {
-      return NextResponse.json(
-        {
-          message: "ID wajib dikirim.",
-        },
-        {
-          status: 400,
-        }
-      );
+      return NextResponse.json({ message: "ID wajib dikirim." }, { status: 400 });
     }
 
-    const updated = await prisma.skill.update({
-      where: {
-        id: body.id,
-      },
+    // Delete old technology links, then recreate
+    await prisma.skillTechnology.deleteMany({ where: { skillId: body.id } });
+
+    const skill = await prisma.skill.update({
+      where: { id: body.id },
       data: {
-        name: body.name,
         category: body.category,
         percentage: Number(body.percentage),
-        icon: body.icon,
+        technologies: {
+          create: technologyIds.map((technologyId: string) => ({ technologyId })),
+        },
+      },
+      include: {
+        technologies: { include: { technology: true } },
       },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(skill);
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        message: "Gagal mengubah skill.",
-      },
-      {
-        status: 500,
-      }
-    );
+    return NextResponse.json({ message: "Gagal mengubah skill." }, { status: 500 });
   }
 }
 
-// ===============================
-// DELETE SKILL
-// ===============================
+// DELETE skill
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
-
-    if (!id) {
-      return NextResponse.json(
-        {
-          message: "ID wajib dikirim.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    await prisma.skill.delete({
-      where: {
-        id,
-      },
-    });
-
-    return NextResponse.json({
-      message: "Skill berhasil dihapus.",
-    });
+    if (!id) return NextResponse.json({ message: "ID wajib dikirim." }, { status: 400 });
+    await prisma.skill.delete({ where: { id } });
+    return NextResponse.json({ message: "Skill berhasil dihapus." });
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        message: "Gagal menghapus skill.",
-      },
-      {
-        status: 500,
-      }
-    );
+    return NextResponse.json({ message: "Gagal menghapus skill." }, { status: 500 });
   }
 }

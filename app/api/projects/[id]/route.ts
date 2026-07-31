@@ -6,9 +6,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params;
     const body = await req.json();
-    const { technologies, ...data } = body;
+    const { technologyIds, ...data } = body;
 
-    // Delete old technologies then recreate
+    // Delete old technology links then recreate
     await prisma.projectTechnology.deleteMany({ where: { projectId: id } });
 
     const project = await prisma.project.update({
@@ -18,10 +18,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         startYear: Number(data.startYear),
         endYear: data.endYear ? Number(data.endYear) : null,
         technologies: {
-          create: (technologies || []).map((name: string) => ({ name })),
+          create: (technologyIds || []).map((technologyId: string) => ({ technologyId })),
         },
       },
-      include: { technologies: true },
+      include: {
+        technologies: { include: { technology: true } },
+      },
     });
 
     return NextResponse.json(project);

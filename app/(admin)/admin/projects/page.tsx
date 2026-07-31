@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import ProjectModal from "./ProjectModal";
 
 interface Technology {
-  id?: string;
+  id: string;
   name: string;
+  logo?: string | null;
+  category?: string | null;
 }
 
 interface Project {
@@ -19,7 +21,8 @@ interface Project {
   github?: string | null;
   demo?: string | null;
   featured: boolean;
-  technologies: Technology[];
+  technologies: { technology: Technology }[];
+  technologyIds?: string[];
   createdAt: string;
 }
 
@@ -161,8 +164,9 @@ export default function ProjectsPage() {
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-1.5 max-w-[180px]">
                           {project.technologies.slice(0, 3).map((t) => (
-                            <span key={t.id || t.name} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                              {t.name}
+                            <span key={t.technology.id} className="flex items-center gap-1 text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                              {t.technology.logo && <img src={t.technology.logo} alt="" className="w-3 h-3 object-contain" />}
+                              {t.technology.name}
                             </span>
                           ))}
                           {project.technologies.length > 3 && (

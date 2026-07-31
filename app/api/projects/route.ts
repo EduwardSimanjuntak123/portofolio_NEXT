@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const projects = await prisma.project.findMany({
-      include: { technologies: true },
+      include: {
+        technologies: {
+          include: { technology: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(projects);
@@ -19,7 +23,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { technologies, ...data } = body;
+    const { technologyIds, ...data } = body;
 
     const project = await prisma.project.create({
       data: {
@@ -27,10 +31,12 @@ export async function POST(req: Request) {
         startYear: Number(data.startYear),
         endYear: data.endYear ? Number(data.endYear) : null,
         technologies: {
-          create: (technologies || []).map((name: string) => ({ name })),
+          create: (technologyIds || []).map((technologyId: string) => ({ technologyId })),
         },
       },
-      include: { technologies: true },
+      include: {
+        technologies: { include: { technology: true } },
+      },
     });
 
     return NextResponse.json(project, { status: 201 });
